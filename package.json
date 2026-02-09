@@ -6,7 +6,8 @@
     "tauri": "tauri",
     "dev": "tauri dev",
     "build": "vite build && tauri build",
-    "vite": "vite"
+    "vite": "vite",
+    "run:debug": "vite build && cargo build --manifest-path src-tauri/Cargo.toml && ./src-tauri/target/debug/stopwatch"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.1.0",

@@ -120,7 +120,7 @@ function resizeWindowToFit() {
 
     const width = Math.ceil(displayRect.width + paddingX);
     // 30 pixel fudge factor.  Maybe necessary due to title bar?
-    const height = Math.ceil(displayRect.height + paddingY + 30);
+    const height = Math.ceil(displayRect.height + paddingY + 31);
 
     if (width > 0 && height > 0) {
       try {
