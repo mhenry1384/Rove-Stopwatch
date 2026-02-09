@@ -1,0 +1,1 @@
+{"main-window":{"identifier":"main-window","description":"Allow always-on-top and window sizing for the main window.","local":true,"windows":["main"],"permissions":["core:default","core:window:allow-set-always-on-top","core:window:allow-set-size"]}}
