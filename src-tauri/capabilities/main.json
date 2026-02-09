@@ -5,6 +5,12 @@
   "permissions": [
     "core:default",
     "core:window:allow-set-always-on-top",
-    "core:window:allow-set-size"
+    "core:window:allow-set-size",
+    "core:window:allow-close",
+    "core:menu:allow-create-default",
+    "core:menu:allow-new",
+    "core:menu:allow-append",
+    "core:menu:allow-set-as-app-menu",
+    "core:menu:allow-set-text"
   ]
 }

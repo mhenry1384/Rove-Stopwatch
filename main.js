@@ -1,8 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
-
-// Set to false to be able to inspect elements with devtools (e.g. for debugging context menu)
-const shouldRegisterContextMenu = true;
+import { Menu, MenuItem, Submenu } from "@tauri-apps/api/menu";
 
 let isRunning = false;
 let startTime = null;
@@ -10,14 +8,12 @@ let displayFormat = "hh:mm:ss"; // or 'hh.hh'
 let intervalId = null;
 let lastDisplayText = null;
 let resizeScheduled = false;
+let toggleFormatMenuItem = null;
 
 const appWindow = getCurrentWindow();
 
 const stopwatchEl = document.getElementById("stopwatch");
 const displayEl = document.getElementById("display");
-const contextMenuEl = document.getElementById("context-menu");
-const resetMenuEl = document.getElementById("reset-menu");
-const toggleFormatEl = document.getElementById("toggle-format");
 
 // Load state on startup
 async function loadState() {
@@ -175,7 +171,6 @@ function resetStopwatch() {
   updateDisplay();
   updateAlwaysOnTop();
   saveState();
-  hideContextMenu();
 }
 
 function toggleFormat() {
@@ -183,22 +178,59 @@ function toggleFormat() {
   updateFormatButtonText();
   updateDisplay();
   saveState();
-  hideContextMenu();
+}
+
+function closeApp() {
+  appWindow.close().catch((error) => {
+    console.error("Failed to close app:", error);
+  });
 }
 
 function updateFormatButtonText() {
-  toggleFormatEl.textContent =
+  if (!toggleFormatMenuItem) return;
+
+  const nextText =
     displayFormat === "hh:mm:ss" ? "Switch to hh.hh" : "Switch to hh:mm:ss";
+  toggleFormatMenuItem.setText(nextText).catch((error) => {
+    console.error("Failed to update menu text:", error);
+  });
 }
 
-function showContextMenu(x, y) {
-  contextMenuEl.style.left = `${x}px`;
-  contextMenuEl.style.top = `${y}px`;
-  contextMenuEl.classList.remove("hidden");
-}
+async function setupAppMenu() {
+  const quitItem = await MenuItem.new({
+    text: "Quit",
+    action: closeApp,
+  });
 
-function hideContextMenu() {
-  contextMenuEl.classList.add("hidden");
+  const fileMenu = await Submenu.new({
+    text: "File",
+    items: [quitItem],
+  });
+
+  const resetItem = await MenuItem.new({
+    text: "Reset",
+    action: resetStopwatch,
+  });
+
+  toggleFormatMenuItem = await MenuItem.new({
+    text: displayFormat === "hh:mm:ss" ? "Switch to hh.hh" : "Switch to hh:mm:ss",
+    action: toggleFormat,
+  });
+
+  const stopwatchMenu = await Submenu.new({
+    text: "Stopwatch",
+    items: [resetItem, toggleFormatMenuItem],
+  });
+
+  const menu = await Menu.new({
+    items: [fileMenu, stopwatchMenu],
+  });
+
+  try {
+    await menu.setAsAppMenu();
+  } catch (error) {
+    console.error("Failed to set app menu:", error);
+  }
 }
 
 // Event listeners
@@ -211,28 +243,15 @@ stopwatchEl.addEventListener("click", (e) => {
   }
 });
 
-if (shouldRegisterContextMenu) {
-  stopwatchEl.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-    showContextMenu(e.clientX, e.clientY);
-  });
-}
-
-document.addEventListener("click", (e) => {
-  if (!contextMenuEl.contains(e.target) && e.target !== stopwatchEl) {
-    hideContextMenu();
-  }
-});
-
 appWindow.onFocusChanged(({ payload }) => {
   if (payload && isRunning) {
     stopStopwatch();
   }
 });
 
-resetMenuEl.addEventListener("click", resetStopwatch);
-toggleFormatEl.addEventListener("click", toggleFormat);
-
 // Initialize
-loadState();
-updateDisplay();
+(async () => {
+  await setupAppMenu();
+  await loadState();
+  updateDisplay();
+})();

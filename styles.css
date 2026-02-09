@@ -44,34 +44,3 @@ body {
     pointer-events: none;
 }
 
-#context-menu {
-    position: fixed;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    z-index: 1000;
-    min-width: 150px;
-}
-
-#context-menu.hidden {
-    display: none;
-}
-
-.menu-item {
-    padding: 10px 15px;
-    cursor: pointer;
-    user-select: none;
-}
-
-.menu-item:hover {
-    background-color: #f0f0f0;
-}
-
-.menu-item:first-child {
-    border-radius: 4px 4px 0 0;
-}
-
-.menu-item:last-child {
-    border-radius: 0 0 4px 4px;
-}
