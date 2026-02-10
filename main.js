@@ -73,7 +73,7 @@ function formatTime(milliseconds) {
   } else {
     // hh.hh format (decimal hours)
     const decimalHours = milliseconds / (1000 * 60 * 60);
-    return decimalHours.toFixed(2);
+    return decimalHours.toFixed(4);
   }
 }
 
@@ -84,7 +84,7 @@ function updateDisplay() {
     const elapsed = Date.now() - startTime;
     nextText = formatTime(elapsed);
   } else if (startTime === null) {
-    nextText = displayFormat === "hh:mm:ss" ? "00:00:00" : "0.00";
+    nextText = displayFormat === "hh:mm:ss" ? "00:00:00" : "0.0000";
   } else {
     const elapsed = Date.now() - startTime;
     nextText = formatTime(elapsed);
@@ -174,7 +174,7 @@ function resetStopwatch() {
 }
 
 function toggleFormat() {
-  displayFormat = displayFormat === "hh:mm:ss" ? "hh.hh" : "hh:mm:ss";
+  displayFormat = displayFormat === "hh:mm:ss" ? "hh.hhhh" : "hh:mm:ss";
   updateFormatButtonText();
   updateDisplay();
   saveState();
@@ -202,28 +202,24 @@ async function setupAppMenu() {
     action: closeApp,
   });
 
-  const fileMenu = await Submenu.new({
-    text: "File",
-    items: [quitItem],
-  });
-
   const resetItem = await MenuItem.new({
     text: "Reset",
     action: resetStopwatch,
   });
 
   toggleFormatMenuItem = await MenuItem.new({
-    text: displayFormat === "hh:mm:ss" ? "Switch to hh.hh" : "Switch to hh:mm:ss",
+    text:
+      displayFormat === "hh:mm:ss" ? "Switch to hh.hh" : "Switch to hh:mm:ss",
     action: toggleFormat,
   });
 
-  const stopwatchMenu = await Submenu.new({
+  const appMenu = await Submenu.new({
     text: "Stopwatch",
-    items: [resetItem, toggleFormatMenuItem],
+    items: [resetItem, toggleFormatMenuItem, quitItem],
   });
 
   const menu = await Menu.new({
-    items: [fileMenu, stopwatchMenu],
+    items: [appMenu],
   });
 
   try {
