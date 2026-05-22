@@ -1,6 +1,6 @@
 {
   "identifier": "main-window",
-  "description": "Allow always-on-top and window sizing for the main window.",
+  "description": "Allow always-on-top, window sizing, and menu for the main window.",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -11,6 +11,8 @@
     "core:menu:allow-new",
     "core:menu:allow-append",
     "core:menu:allow-set-as-app-menu",
-    "core:menu:allow-set-text"
+    "core:menu:allow-set-text",
+    "core:menu:allow-popup",
+    "core:webview:allow-create-webview-window"
   ]
 }

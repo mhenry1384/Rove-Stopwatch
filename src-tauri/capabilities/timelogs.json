@@ -1,0 +1,8 @@
+{
+  "identifier": "timelogs-window",
+  "description": "Permissions for the time logs viewer window.",
+  "windows": ["timelogs"],
+  "permissions": [
+    "core:default"
+  ]
+}
