@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "PowerShell(taskkill /F /IM stopwatch.exe 2>$null)"
     ]
   }
 }

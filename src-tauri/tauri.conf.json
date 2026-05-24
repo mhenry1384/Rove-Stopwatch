@@ -14,9 +14,10 @@
       {
         "title": "Stopwatch",
         "width": 600,
-        "height": 400,
+        "height": 100,
         "resizable": false,
         "minimizable": false,
+        "maximizable": false,
         "fullscreen": false
       }
     ],

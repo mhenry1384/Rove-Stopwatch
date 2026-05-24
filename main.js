@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
-import { Menu, MenuItem, Submenu } from "@tauri-apps/api/menu";
+import { Menu, MenuItem } from "@tauri-apps/api/menu";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { listen } from "@tauri-apps/api/event";
 
@@ -10,7 +10,6 @@ let displayFormat = "hh:mm:ss";
 let intervalId = null;
 let lastDisplayText = null;
 let resizeScheduled = false;
-let toggleFormatMenuItem = null;
 let ctxToggleFormatMenuItem = null;
 let contextMenu = null;
 let timeLogs = [];
@@ -118,7 +117,7 @@ function resizeWindowToFit() {
       parseFloat(stopwatchStyles.paddingBottom);
 
     const width = Math.ceil(displayRect.width + paddingX);
-    const height = Math.ceil(displayRect.height + paddingY + 31);
+    const height = Math.ceil(displayRect.height + paddingY + 4);
 
     if (width > 0 && height > 0) {
       try {
@@ -213,11 +212,6 @@ function closeApp() {
 function updateFormatButtonText() {
   const nextText =
     displayFormat === "hh:mm:ss" ? "Switch to hh.hh" : "Switch to hh:mm:ss";
-  if (toggleFormatMenuItem) {
-    toggleFormatMenuItem.setText(nextText).catch((err) =>
-      console.error("Failed to update menu text:", err)
-    );
-  }
   if (ctxToggleFormatMenuItem) {
     ctxToggleFormatMenuItem.setText(nextText).catch((err) =>
       console.error("Failed to update context menu text:", err)
@@ -256,29 +250,6 @@ async function openTimelogsWindow() {
 }
 
 async function setupAppMenu() {
-  const quitItem = await MenuItem.new({ text: "Quit", action: closeApp });
-  const resetItem = await MenuItem.new({ text: "Reset", action: resetStopwatch });
-  const reviewItem = await MenuItem.new({
-    text: "Review Times",
-    action: openTimelogsWindow,
-  });
-  toggleFormatMenuItem = await MenuItem.new({
-    text: displayFormat === "hh:mm:ss" ? "Switch to hh.hh" : "Switch to hh:mm:ss",
-    action: toggleFormat,
-  });
-
-  const appMenu = await Submenu.new({
-    text: "Stopwatch",
-    items: [resetItem, reviewItem, toggleFormatMenuItem, quitItem],
-  });
-  const menu = await Menu.new({ items: [appMenu] });
-  try {
-    await menu.setAsAppMenu();
-  } catch (error) {
-    console.error("Failed to set app menu:", error);
-  }
-
-  // Separate instances for the right-click context menu
   const ctxQuit = await MenuItem.new({ text: "Quit", action: closeApp });
   const ctxReset = await MenuItem.new({ text: "Reset", action: resetStopwatch });
   const ctxReview = await MenuItem.new({
