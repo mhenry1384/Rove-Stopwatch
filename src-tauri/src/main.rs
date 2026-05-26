@@ -170,7 +170,16 @@ fn clear_time_logs(app: tauri::AppHandle) -> Result<(), String> {
 
 fn main() {
     tauri::Builder::default()
-        .menu(|app| tauri::menu::Menu::new(app))
+        .setup(|_app| {
+            // On macOS the menu lives in the system menu bar (not the window),
+            // so setting an empty menu removes File/Edit/View/History without
+            // adding any blank bar to the window itself. On Windows/Linux we
+            // leave the menu alone – adding even an empty menu embeds a blank
+            // bar inside the window frame and steals vertical space.
+            #[cfg(target_os = "macos")]
+            _app.set_menu(tauri::menu::Menu::new(_app.handle())?)?;
+            Ok(())
+        })
         .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             save_state,

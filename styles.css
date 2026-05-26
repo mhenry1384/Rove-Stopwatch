@@ -44,6 +44,58 @@ body {
     pointer-events: none;
 }
 
+/* About Panel */
+#about {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.3s ease;
+}
+
+#about.hidden { display: none; }
+#about.stopped { background-color: pink; color: black; }
+#about.running { background-color: lightgreen; color: black; }
+
+#about-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 24px;
+  text-align: center;
+  user-select: none;
+}
+
+#about-title {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+#about-ver {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+#about-desc {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+#about-ok {
+  margin-top: 12px;
+  padding: 4px 20px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+#about-ok:hover { background: rgba(0, 0, 0, 0.2); }
+
 /* Modal Styles */
 .modal {
     position: fixed;

@@ -3,6 +3,7 @@ import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 import { Menu, MenuItem } from "@tauri-apps/api/menu";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { listen } from "@tauri-apps/api/event";
+import { getName, getVersion } from "@tauri-apps/api/app";
 
 let isRunning = false;
 let startTime = null;
@@ -18,6 +19,9 @@ let timelogsWin = null;
 const appWindow = getCurrentWindow();
 const stopwatchEl = document.getElementById("stopwatch");
 const displayEl = document.getElementById("display");
+const aboutEl = document.getElementById("about");
+const aboutContentEl = document.getElementById("about-content");
+let aboutVisible = false;
 
 async function loadState() {
   try {
@@ -107,7 +111,7 @@ const MAC_TITLE_BAR_HEIGHT = 28;
 const isMac = navigator.userAgent.includes("Mac");
 
 function resizeWindowToFit() {
-  if (resizeScheduled) return;
+  if (resizeScheduled || aboutVisible) return;
   resizeScheduled = true;
 
   requestAnimationFrame(async () => {
@@ -214,6 +218,38 @@ function closeApp() {
   });
 }
 
+async function showAbout() {
+  if (aboutVisible) return;
+  aboutVisible = true;
+
+  const name = await getName();
+  const version = await getVersion();
+  document.getElementById("about-title").textContent = name;
+  document.getElementById("about-ver").textContent = `v${version}`;
+
+  aboutEl.className = isRunning ? "running" : "stopped";
+  stopwatchEl.style.display = "none";
+
+  requestAnimationFrame(async () => {
+    const rect = aboutContentEl.getBoundingClientRect();
+    const w = Math.ceil(rect.width);
+    const h = Math.ceil(rect.height + (isMac ? MAC_TITLE_BAR_HEIGHT : 0));
+    try {
+      await appWindow.setSize(new LogicalSize(w, h));
+    } catch (e) {
+      console.error("Failed to resize for about:", e);
+    }
+  });
+}
+
+function hideAbout() {
+  aboutEl.className = "hidden";
+  stopwatchEl.style.display = "";
+  aboutVisible = false;
+  lastDisplayText = null; // force resize recalculation
+  resizeWindowToFit();
+}
+
 function updateFormatButtonText() {
   const nextText =
     displayFormat === "hh:mm:ss" ? "Switch to hh.hh" : "Switch to hh:mm:ss";
@@ -266,8 +302,10 @@ async function setupAppMenu() {
     action: toggleFormat,
   });
 
+  const ctxAbout = await MenuItem.new({ text: "About", action: showAbout });
+
   contextMenu = await Menu.new({
-    items: [ctxReset, ctxReview, ctxToggleFormatMenuItem, ctxQuit],
+    items: [ctxReset, ctxReview, ctxToggleFormatMenuItem, ctxAbout, ctxQuit],
   });
 }
 
@@ -279,6 +317,8 @@ stopwatchEl.addEventListener("click", () => {
     startStopwatch();
   }
 });
+
+document.getElementById("about-ok").addEventListener("click", hideAbout);
 
 document.addEventListener("contextmenu", (e) => {
   e.preventDefault();
