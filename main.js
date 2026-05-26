@@ -101,6 +101,11 @@ function updateDisplay() {
   }
 }
 
+// On macOS, setSize sets the outer window size (title bar included), so we
+// need to add the native title bar height to get the correct content area.
+const MAC_TITLE_BAR_HEIGHT = 28;
+const isMac = navigator.userAgent.includes("Mac");
+
 function resizeWindowToFit() {
   if (resizeScheduled) return;
   resizeScheduled = true;
@@ -117,7 +122,7 @@ function resizeWindowToFit() {
       parseFloat(stopwatchStyles.paddingBottom);
 
     const width = Math.ceil(displayRect.width + paddingX);
-    const height = Math.ceil(displayRect.height + paddingY + 4);
+    const height = Math.ceil(displayRect.height + paddingY + 4 + (isMac ? MAC_TITLE_BAR_HEIGHT : 0));
 
     if (width > 0 && height > 0) {
       try {
@@ -284,11 +289,6 @@ document.addEventListener("contextmenu", (e) => {
   }
 });
 
-appWindow.onFocusChanged(({ payload }) => {
-  if (payload && isRunning) {
-    stopStopwatch();
-  }
-});
 
 // Sync timeLogs when timelogs window makes edits
 listen("logs-updated", async () => {

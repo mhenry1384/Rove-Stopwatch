@@ -170,6 +170,7 @@ fn clear_time_logs(app: tauri::AppHandle) -> Result<(), String> {
 
 fn main() {
     tauri::Builder::default()
+        .menu(|app| tauri::menu::Menu::new(app))
         .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             save_state,

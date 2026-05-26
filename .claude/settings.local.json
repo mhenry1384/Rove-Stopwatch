@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(npm run *)",
-      "PowerShell(taskkill /F /IM stopwatch.exe 2>$null)"
+      "PowerShell(taskkill /F /IM stopwatch.exe 2>$null)",
+      "Bash(Start-Sleep -Seconds 15)",
+      "Bash(Get-Content \"C:\\\\Users\\\\mhenr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--GitHub-Stopwatch-node-\\\\4ef6b5c4-6a75-472d-9238-94ed84fe1d69\\\\tasks\\\\bgp5le0bn.output\" -Tail 30)"
     ]
   }
 }
