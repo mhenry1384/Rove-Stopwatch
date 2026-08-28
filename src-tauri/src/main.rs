@@ -147,6 +147,25 @@ fn delete_time_log(index: usize, app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn restore_time_log(index: usize, log: TimeLog, app: tauri::AppHandle) -> Result<(), String> {
+    let store = app
+        .store("store.json")
+        .map_err(|e| format!("Failed to get store: {}", e))?;
+
+    let mut state: StopwatchState = match store.get("stopwatch_state") {
+        Some(value) => serde_json::from_value(value)
+            .map_err(|e| format!("Failed to deserialize state: {}", e))?,
+        None => return Err("No state found".to_string()),
+    };
+
+    let insert_at = index.min(state.time_logs.len());
+    state.time_logs.insert(insert_at, log);
+    store.set("stopwatch_state", serde_json::to_value(&state).unwrap());
+    store.save().map_err(|e| format!("Failed to save store: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
 fn clear_time_logs(app: tauri::AppHandle) -> Result<(), String> {
     let store = app
         .store("store.json")
@@ -188,6 +207,7 @@ fn main() {
             get_time_logs,
             update_time_log,
             delete_time_log,
+            restore_time_log,
             clear_time_logs
         ])
         .run(tauri::generate_context!())

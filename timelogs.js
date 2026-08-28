@@ -1,10 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
-import { emit } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 
 let timeLogs = [];
+const deletedLogs = [];
 
 const timeLogsList = document.getElementById("timeLogsList");
 const totalDisplay = document.getElementById("totalDisplay");
+const undoDeleteLink = document.getElementById("undo-delete");
 
 async function loadLogs() {
   try {
@@ -43,11 +45,19 @@ function formatDateTime(timestamp) {
   return new Date(timestamp).toLocaleString();
 }
 
+function formatDateTimeInput(timestamp) {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 function getTotalMs() {
   return timeLogs.reduce((sum, log) => sum + log.duration_ms, 0);
 }
 
 function renderLogs() {
+  undoDeleteLink.classList.toggle("hidden", deletedLogs.length === 0);
   const totalMs = getTotalMs();
   totalDisplay.textContent = `Total: ${formatHms(totalMs)} (${formatDecimal(totalMs)} hrs)`;
 
@@ -76,6 +86,10 @@ function renderLogs() {
         </div>
         <span class="log-decimal" data-index="${index}">${formatDecimal(log.duration_ms)} hrs</span>
       </div>
+      <div class="log-edit-row">
+        <label for="end-time-${index}">End time:</label>
+        <input type="datetime-local" class="end-time-input" id="end-time-${index}" value="${formatDateTimeInput(log.stop)}" data-index="${index}">
+      </div>
       <div class="log-actions">
         <button class="btn btn-sm btn-success save-btn" data-index="${index}">Save</button>
         <button class="btn btn-sm btn-danger delete-btn" data-index="${index}">Delete</button>
@@ -93,6 +107,17 @@ function renderLogs() {
       const s = parseInt(row.querySelector(".hms-s").value) || 0;
       const ms = hmsToMs(h, m, s);
       row.querySelector(".log-decimal").textContent = `${formatDecimal(ms)} hrs`;
+      row.querySelector(".end-time-input").value = formatDateTimeInput(timeLogs[index].start + ms);
+    });
+  });
+
+  document.querySelectorAll(".end-time-input").forEach((input) => {
+    input.addEventListener("input", (e) => {
+      const index = parseInt(e.target.dataset.index);
+      const endTime = Date.parse(e.target.value);
+      if (Number.isNaN(endTime)) return;
+      const duration = Math.max(0, endTime - timeLogs[index].start);
+      e.target.closest(".time-log-item").querySelector(".log-decimal").textContent = `${formatDecimal(duration)} hrs`;
     });
   });
 
@@ -106,9 +131,14 @@ async function saveLog(e) {
   const h = parseInt(item.querySelector(".hms-h").value) || 0;
   const m = parseInt(item.querySelector(".hms-m").value) || 0;
   const s = parseInt(item.querySelector(".hms-s").value) || 0;
-  const newDuration = hmsToMs(h, m, s);
+  const endTimeInput = item.querySelector(".end-time-input");
+  const endTime = endTimeInput.value ? Date.parse(endTimeInput.value) : null;
+  const newDuration = endTime !== null && !Number.isNaN(endTime)
+    ? Math.max(0, endTime - timeLogs[index].start)
+    : hmsToMs(h, m, s);
 
   timeLogs[index].duration_ms = newDuration;
+  timeLogs[index].stop = endTime;
 
   try {
     await invoke("update_time_log", { index, log: timeLogs[index] });
@@ -121,11 +151,14 @@ async function saveLog(e) {
 
 async function deleteLog(e) {
   const index = parseInt(e.target.dataset.index);
-  if (!confirm(`Delete log #${index + 1}?`)) return;
+  const deletedLog = timeLogs[index];
+  if (!deletedLog) return;
 
   try {
     await invoke("delete_time_log", { index });
     timeLogs.splice(index, 1);
+    deletedLogs.push({ index, log: deletedLog });
+    if (deletedLogs.length > 10) deletedLogs.shift();
     await emit("logs-updated", {});
     renderLogs();
   } catch (error) {
@@ -133,4 +166,27 @@ async function deleteLog(e) {
   }
 }
 
+async function undoDelete() {
+  const deleted = deletedLogs.pop();
+  if (!deleted) return;
+
+  try {
+    await invoke("restore_time_log", deleted);
+    timeLogs.splice(Math.min(deleted.index, timeLogs.length), 0, deleted.log);
+    await emit("logs-updated", {});
+    renderLogs();
+  } catch (error) {
+    deletedLogs.push(deleted);
+    console.error("Failed to undo delete:", error);
+  }
+}
+
+listen("logs-updated", loadLogs).catch((error) =>
+  console.error("Failed to listen for logs-updated:", error)
+);
+
 loadLogs();
+undoDeleteLink.addEventListener("click", (event) => {
+  event.preventDefault();
+  undoDelete();
+});

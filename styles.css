@@ -304,6 +304,16 @@ body.timelogs-page {
     border: 1px solid #ddd;
 }
 
+.hidden {
+    display: none;
+}
+
+.undo-delete {
+    color: #007bff;
+    font-size: 13px;
+    cursor: pointer;
+}
+
 .total-display {
     font-size: 15px;
     font-weight: bold;
@@ -341,6 +351,14 @@ body.timelogs-page {
     color: #555;
     font-size: 12px;
     min-width: 60px;
+}
+
+.end-time-input {
+    padding: 3px 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
 }
 
 .hms-inputs {

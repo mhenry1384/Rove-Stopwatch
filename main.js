@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 import { Menu, MenuItem } from "@tauri-apps/api/menu";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { getName, getVersion } from "@tauri-apps/api/app";
 
 let isRunning = false;
@@ -164,8 +164,11 @@ function startStopwatch() {
 async function stopStopwatch() {
   if (!isRunning || !startTime) return;
 
-  const elapsed = Date.now() - startTime;
-  timeLogs.push({ start: startTime, stop: Date.now(), duration_ms: elapsed });
+  const stopTime = Date.now();
+  const elapsed = stopTime - startTime;
+  if (elapsed >= 2000) {
+    timeLogs.push({ start: startTime, stop: stopTime, duration_ms: elapsed });
+  }
 
   isRunning = false;
   startTime = null;
@@ -179,7 +182,10 @@ async function stopStopwatch() {
 
   updateDisplay();
   updateAlwaysOnTop();
-  saveState();
+  await saveState();
+  emit("logs-updated", {}).catch((error) =>
+    console.error("Failed to notify time logs window:", error)
+  );
 }
 
 async function resetStopwatch() {
