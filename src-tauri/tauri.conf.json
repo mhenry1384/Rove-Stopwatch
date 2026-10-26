@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
-  "productName": "Stopwatch",
+  "productName": "Rove Stopwatch",
   "version": "0.1.1",
   "identifier": "com.stopwatch.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Stopwatch",
+        "title": "Rove Stopwatch",
         "width": 600,
         "height": 100,
         "resizable": false,

@@ -1,4 +1,4 @@
-# Stopwatch Tauri Application
+# Rove Stopwatch
 
 This is a Tauri-based stopwatch application with vanilla JavaScript frontend.
 
