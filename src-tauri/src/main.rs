@@ -187,6 +187,20 @@ fn clear_time_logs(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+// Hide the (disabled) minimize and zoom buttons so the title has room to show.
+#[cfg(target_os = "macos")]
+fn hide_mac_window_buttons(window: &tauri::WebviewWindow) {
+    use objc2_app_kit::{NSWindow, NSWindowButton};
+    if let Ok(ptr) = window.ns_window() {
+        let ns_window = unsafe { &*(ptr as *const NSWindow) };
+        for kind in [NSWindowButton::MiniaturizeButton, NSWindowButton::ZoomButton] {
+            if let Some(button) = ns_window.standardWindowButton(kind) {
+                button.setHidden(true);
+            }
+        }
+    }
+}
+
 fn main() {
     tauri::Builder::default()
         .setup(|_app| {
@@ -197,6 +211,13 @@ fn main() {
             // bar inside the window frame and steals vertical space.
             #[cfg(target_os = "macos")]
             _app.set_menu(tauri::menu::Menu::new(_app.handle())?)?;
+            #[cfg(target_os = "macos")]
+            {
+                use tauri::Manager;
+                if let Some(window) = _app.get_webview_window("main") {
+                    hide_mac_window_buttons(&window);
+                }
+            }
             Ok(())
         })
         .plugin(tauri_plugin_store::Builder::new().build())

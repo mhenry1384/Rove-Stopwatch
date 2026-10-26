@@ -1,5 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
+import {
+  getCurrentWindow,
+  currentMonitor,
+  LogicalSize,
+  PhysicalPosition,
+} from "@tauri-apps/api/window";
 import { Menu, MenuItem } from "@tauri-apps/api/menu";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { emit, listen } from "@tauri-apps/api/event";
@@ -266,20 +271,78 @@ function updateFormatButtonText() {
   }
 }
 
+const TIMELOGS_WIDTH = 680;
+const TIMELOGS_HEIGHT = 480;
+const TIMELOGS_GAP = 8;
+
+// Pick a spot for the time logs window next to the stopwatch (below, above,
+// right, then left), keeping it inside the monitor's work area. Returns
+// physical coordinates, or null if the monitor can't be determined.
+async function computeTimelogsPosition(outerWidth, outerHeight) {
+  const monitor = await currentMonitor();
+  if (!monitor) return null;
+  const scale = await appWindow.scaleFactor();
+  const pos = await appWindow.outerPosition();
+  const size = await appWindow.outerSize();
+  const area = monitor.workArea || { position: monitor.position, size: monitor.size };
+  const left = area.position.x;
+  const top = area.position.y;
+  const right = left + area.size.width;
+  const bottom = top + area.size.height;
+  const gap = Math.round(TIMELOGS_GAP * scale);
+
+  const clampX = (x) => Math.max(left, Math.min(x, right - outerWidth));
+  const clampY = (y) => Math.max(top, Math.min(y, bottom - outerHeight));
+
+  const candidates = [
+    { room: bottom - (pos.y + size.height + gap), need: outerHeight,
+      x: clampX(pos.x), y: pos.y + size.height + gap },
+    { room: pos.y - gap - top, need: outerHeight,
+      x: clampX(pos.x), y: pos.y - gap - outerHeight },
+    { room: right - (pos.x + size.width + gap), need: outerWidth,
+      x: pos.x + size.width + gap, y: clampY(pos.y) },
+    { room: pos.x - gap - left, need: outerWidth,
+      x: pos.x - gap - outerWidth, y: clampY(pos.y) },
+  ];
+
+  // First side with enough room wins; otherwise use the roomiest side.
+  const best =
+    candidates.find((c) => c.room >= c.need) ||
+    candidates.reduce((a, b) => (b.room / b.need > a.room / a.need ? b : a));
+  return { x: clampX(best.x), y: clampY(best.y), scale };
+}
+
 async function openTimelogsWindow() {
   try {
     if (timelogsWin) {
+      const size = await timelogsWin.outerSize();
+      const spot = await computeTimelogsPosition(size.width, size.height);
+      if (spot) {
+        await timelogsWin.setPosition(new PhysicalPosition(spot.x, spot.y));
+      }
       timelogsWin.setFocus().catch(() => {});
       return;
     }
 
+    // Estimate the new window's frame (title bar/borders) from the main window's.
+    const scale = await appWindow.scaleFactor();
+    const mainOuter = await appWindow.outerSize();
+    const mainInner = await appWindow.innerSize();
+    const frameW = mainOuter.width - mainInner.width;
+    const frameH = mainOuter.height - mainInner.height;
+    const spot = await computeTimelogsPosition(
+      Math.round(TIMELOGS_WIDTH * scale) + frameW,
+      Math.round(TIMELOGS_HEIGHT * scale) + frameH
+    );
+
     timelogsWin = new WebviewWindow("timelogs", {
       url: "timelogs.html",
       title: "Time Logs",
-      width: 680,
-      height: 480,
+      width: TIMELOGS_WIDTH,
+      height: TIMELOGS_HEIGHT,
+      ...(spot ? { x: spot.x / spot.scale, y: spot.y / spot.scale } : { center: true }),
       resizable: true,
-      minimizable: true,
+      minimizable: false,
       maximizable: false,
     });
 
