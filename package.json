@@ -1,6 +1,6 @@
 {
   "name": "rove-stopwatch",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Rove Stopwatch, a simple stopwatch application built with Tauri",
   "scripts": {
     "tauri": "tauri",

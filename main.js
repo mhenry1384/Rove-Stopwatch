@@ -312,6 +312,20 @@ async function computeTimelogsPosition(outerWidth, outerHeight) {
   return { x: clampX(best.x), y: clampY(best.y), scale };
 }
 
+// Windows won't always raise a window on setFocus alone; briefly pinning it on top forces it forward.
+async function bringToFront(win) {
+  if (!win) return;
+  try {
+    await win.unminimize();
+    await win.show();
+    await win.setAlwaysOnTop(true);
+    await win.setFocus();
+    await win.setAlwaysOnTop(false);
+  } catch (e) {
+    console.error("Failed to bring window to front:", e);
+  }
+}
+
 async function openTimelogsWindow() {
   try {
     if (timelogsWin) {
@@ -320,7 +334,7 @@ async function openTimelogsWindow() {
       if (spot) {
         await timelogsWin.setPosition(new PhysicalPosition(spot.x, spot.y));
       }
-      timelogsWin.setFocus().catch(() => {});
+      await bringToFront(timelogsWin);
       return;
     }
 
@@ -344,6 +358,11 @@ async function openTimelogsWindow() {
       resizable: true,
       minimizable: false,
       maximizable: false,
+      focus: true,
+    });
+
+    timelogsWin.once("tauri://created", () => {
+      bringToFront(timelogsWin);
     });
 
     timelogsWin.once("tauri://destroyed", () => {

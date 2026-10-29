@@ -68,7 +68,8 @@ function renderLogs() {
     return;
   }
 
-  timeLogs.forEach((log, index) => {
+  // Most recent first; data-index still refers to the position in timeLogs.
+  timeLogs.map((log, index) => [log, index]).reverse().forEach(([log, index]) => {
     const { h, m, s } = msToHms(log.duration_ms);
     const div = document.createElement("div");
     div.className = "time-log-item";
