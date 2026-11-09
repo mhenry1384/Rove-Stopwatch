@@ -9,6 +9,7 @@
     "core:window:allow-set-position",
     "core:window:allow-close",
     "core:window:allow-set-focus",
+    "core:window:allow-set-title",
     "core:window:allow-show",
     "core:window:allow-unminimize",
     "core:menu:allow-create-default",
@@ -16,6 +17,7 @@
     "core:menu:allow-append",
     "core:menu:allow-set-as-app-menu",
     "core:menu:allow-set-text",
+    "core:menu:allow-set-enabled",
     "core:menu:allow-popup",
     "core:webview:allow-create-webview-window"
   ]

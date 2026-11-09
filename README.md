@@ -15,6 +15,8 @@ A simple, elegant stopwatch application built with Tauri and vanilla JavaScript.
   - Pink background when stopped
   - Light green background when running
 - **Persistent State**: Remembers start time and settings even after closing the app or shutting down the computer
+- **Up to Five Stopwatches**: Right-click and choose "Add Stopwatch" for another independent stopwatch at the bottom, or "Remove Stopwatch" to remove the one you clicked
+- **Single Instance**: Launching the app again brings the running window forward
 - **Non-resizable Window**: Fixed size for consistent user experience
 
 ## Prerequisites

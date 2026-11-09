@@ -17,9 +17,16 @@ body {
     align-items: center;
 }
 
-#stopwatch {
+#stopwatches {
     width: 100vw;
     height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.stopwatch {
+    flex: 1;
+    width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -27,17 +34,21 @@ body {
     transition: background-color 0.3s ease;
 }
 
-#stopwatch.stopped {
+.stopwatch + .stopwatch {
+    border-top: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.stopwatch.stopped {
     background-color: pink;
     color: black;
 }
 
-#stopwatch.running {
+.stopwatch.running {
     background-color: lightgreen;
     color: black;
 }
 
-#display {
+.display {
     font-size: 36px;
     font-weight: bold;
     user-select: none;

@@ -1,5 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+
+// Each stopwatch has its own time logs window, identified by the window label.
+const stopwatch = Number(getCurrentWindow().label.replace("timelogs-", ""));
 
 let timeLogs = [];
 const deletedLogs = [];
@@ -10,7 +14,7 @@ const undoDeleteLink = document.getElementById("undo-delete");
 
 async function loadLogs() {
   try {
-    const state = await invoke("get_state");
+    const state = await invoke("get_state", { stopwatch });
     timeLogs = state?.time_logs || [];
   } catch (error) {
     console.error("Failed to load logs:", error);
@@ -142,8 +146,8 @@ async function saveLog(e) {
   timeLogs[index].stop = endTime;
 
   try {
-    await invoke("update_time_log", { index, log: timeLogs[index] });
-    await emit("logs-updated", {});
+    await invoke("update_time_log", { stopwatch, index, log: timeLogs[index] });
+    await emit("logs-updated", { stopwatch });
     renderLogs();
   } catch (error) {
     console.error("Failed to update log:", error);
@@ -156,11 +160,11 @@ async function deleteLog(e) {
   if (!deletedLog) return;
 
   try {
-    await invoke("delete_time_log", { index });
+    await invoke("delete_time_log", { stopwatch, index });
     timeLogs.splice(index, 1);
     deletedLogs.push({ index, log: deletedLog });
     if (deletedLogs.length > 10) deletedLogs.shift();
-    await emit("logs-updated", {});
+    await emit("logs-updated", { stopwatch });
     renderLogs();
   } catch (error) {
     console.error("Failed to delete log:", error);
@@ -172,9 +176,9 @@ async function undoDelete() {
   if (!deleted) return;
 
   try {
-    await invoke("restore_time_log", deleted);
+    await invoke("restore_time_log", { stopwatch, ...deleted });
     timeLogs.splice(Math.min(deleted.index, timeLogs.length), 0, deleted.log);
-    await emit("logs-updated", {});
+    await emit("logs-updated", { stopwatch });
     renderLogs();
   } catch (error) {
     deletedLogs.push(deleted);
@@ -182,7 +186,10 @@ async function undoDelete() {
   }
 }
 
-listen("logs-updated", loadLogs).catch((error) =>
+listen("logs-updated", (event) => {
+  // Reloading on another stopwatch's edits would wipe unsaved input here.
+  if (event.payload.stopwatch === stopwatch) loadLogs();
+}).catch((error) =>
   console.error("Failed to listen for logs-updated:", error)
 );
 
