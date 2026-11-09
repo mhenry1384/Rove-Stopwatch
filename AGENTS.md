@@ -1,5 +1,9 @@
 # Agent Instructions
 
+## Git
+
+It is completely okay to commit and push directly to the default branch (`main`). Do not create a feature branch unless asked.
+
 ## Release builds
 
 Every time you do a release build (`npm run build`):
