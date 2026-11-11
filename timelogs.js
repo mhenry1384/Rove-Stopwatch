@@ -36,6 +36,13 @@ function hmsToMs(h, m, s) {
   return ((h * 3600) + (m * 60) + s) * 1000;
 }
 
+function readDuration(item) {
+  const h = parseInt(item.querySelector(".hms-h").value) || 0;
+  const m = parseInt(item.querySelector(".hms-m").value) || 0;
+  const s = parseInt(item.querySelector(".hms-s").value) || 0;
+  return hmsToMs(h, m, s);
+}
+
 function formatHms(ms) {
   const { h, m, s } = msToHms(ms);
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
@@ -106,13 +113,11 @@ function renderLogs() {
   document.querySelectorAll(".hms-h, .hms-m, .hms-s").forEach((input) => {
     input.addEventListener("input", (e) => {
       const index = parseInt(e.target.dataset.index);
-      const row = e.target.closest(".log-edit-row");
-      const h = parseInt(row.querySelector(".hms-h").value) || 0;
-      const m = parseInt(row.querySelector(".hms-m").value) || 0;
-      const s = parseInt(row.querySelector(".hms-s").value) || 0;
-      const ms = hmsToMs(h, m, s);
-      row.querySelector(".log-decimal").textContent = `${formatDecimal(ms)} hrs`;
-      row.querySelector(".end-time-input").value = formatDateTimeInput(timeLogs[index].start + ms);
+      // The end time input is in a different row, so search the whole log item.
+      const item = e.target.closest(".time-log-item");
+      const ms = readDuration(item);
+      item.querySelector(".log-decimal").textContent = `${formatDecimal(ms)} hrs`;
+      item.querySelector(".end-time-input").value = formatDateTimeInput(timeLogs[index].start + ms);
     });
   });
 
@@ -122,7 +127,12 @@ function renderLogs() {
       const endTime = Date.parse(e.target.value);
       if (Number.isNaN(endTime)) return;
       const duration = Math.max(0, endTime - timeLogs[index].start);
-      e.target.closest(".time-log-item").querySelector(".log-decimal").textContent = `${formatDecimal(duration)} hrs`;
+      const item = e.target.closest(".time-log-item");
+      const { h, m, s } = msToHms(duration);
+      item.querySelector(".hms-h").value = h;
+      item.querySelector(".hms-m").value = m;
+      item.querySelector(".hms-s").value = s;
+      item.querySelector(".log-decimal").textContent = `${formatDecimal(duration)} hrs`;
     });
   });
 
@@ -133,17 +143,12 @@ function renderLogs() {
 async function saveLog(e) {
   const index = parseInt(e.target.dataset.index);
   const item = e.target.closest(".time-log-item");
-  const h = parseInt(item.querySelector(".hms-h").value) || 0;
-  const m = parseInt(item.querySelector(".hms-m").value) || 0;
-  const s = parseInt(item.querySelector(".hms-s").value) || 0;
-  const endTimeInput = item.querySelector(".end-time-input");
-  const endTime = endTimeInput.value ? Date.parse(endTimeInput.value) : null;
-  const newDuration = endTime !== null && !Number.isNaN(endTime)
-    ? Math.max(0, endTime - timeLogs[index].start)
-    : hmsToMs(h, m, s);
+  // The duration and end time inputs are kept in sync, so the duration
+  // (which has seconds precision) is the source of truth.
+  const newDuration = readDuration(item);
 
   timeLogs[index].duration_ms = newDuration;
-  timeLogs[index].stop = endTime;
+  timeLogs[index].stop = timeLogs[index].start + newDuration;
 
   try {
     await invoke("update_time_log", { stopwatch, index, log: timeLogs[index] });
